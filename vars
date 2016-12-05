@@ -1,7 +1,7 @@
 ## IP or DNS of server's WAN -- must be set!
-export WANDNS=fhq.duckdns.org
+export WANDNS=
 ## server's external port
-export WANPORT=11194
+export WANPORT=1194
 ## server's LAN port
 export LANPORT=1194
 
@@ -15,18 +15,18 @@ MASK=
 export KEY_COUNTRY=TH
 export KEY_PROVINCE=10
 export KEY_CITY=Donmueang
-export KEY_ORG="OMF Thailand"
-export KEY_EMAIL=omfth@teamlampang.org
+export KEY_ORG=
+export KEY_EMAIL=
 export KEY_NAME=server
 export KEY_OU=UVPN
 export KEY_CN=server
-export KEY_ALTNAMES=brain
+; export KEY_ALTNAMES=
 
 ## choose DNS servers
-# Google's DNS harvesters: 8.8.8.8  8.8.4.4
-# OpenDNS with filter options: 208.67.222.222  208.67.220.220
-# DNS.watch unlogged, DNSSEC enabled: 84.200.69.80  84.200.70.40
-# The router's DNS: ROUTER (will be replaced with the detected gateway)
+##  Google's DNS harvesters: 8.8.8.8  8.8.4.4
+##  OpenDNS with filter options: 208.67.222.222  208.67.220.220
+##  DNS.watch unlogged, DNSSEC enabled: 84.200.69.80  84.200.70.40
+##  The router's DNS: "GW" (will be replaced with the detected gateway)
 export DNS1=84.200.69.80
 export DNS2=84.200.70.40
 
