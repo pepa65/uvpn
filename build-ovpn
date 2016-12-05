@@ -25,7 +25,7 @@ TA=$(cat "$ta")
 
 crt="$KEY_DIR/$NAME.crt"
 key="$KEY_DIR/$NAME.key"
-! [[ -f "$crt" && -f "$key" ]] && "$EASY_RSA/build-key" "$NAME"
+! [[ -f "$crt" && -f "$key" ]] && "$EASY_RSA/pkitool" "$NAME"
 CERT=$(sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' "$crt")
 KEY=$(cat "$key")
 
@@ -37,9 +37,9 @@ resolv-retry infinite
 nobind
 persist-key
 persist-tun
-key-direction 1
 remote-cert-tls server
-tls-version-min 1.2
+; tls-version-min 1.2
+key-direction 1
 verify-x509-name $KEY_NAME name
 cipher AES-256-CBC
 auth SHA256
@@ -60,7 +60,7 @@ $KEY
 
 <tls-auth>
 $TA
-<tls-auth>
+</tls-auth>
 " >"$ovpn"
 
 echo "Done building $ovpn"

@@ -9,18 +9,20 @@ self="$(readlink -e "$0")"
 ## Set variables
 source ${self%/*}/vars
 getroute=$(ip route get 8.8.8.8)
-GW=$(echo $getroute |awk '{print $3}')
-DEV=$(echo $getroute |awk '{print $5}')
-LANIP=$(echo $getroute |awk '{print $7}')
-MASK=$(ifconfig $DEV |sed 's/^.*Mask://' |grep '^[0-9.]*.$')
+[[ $DEV ]] || DEV=$(echo $getroute |awk '{print $5}')
+[[ $GW ]] || GW=$(echo $getroute |awk '{print $3}')
+[[ $lANIP ]] || LANIP=$(echo $getroute |awk '{print $7}')
+[[ $MASK ]] || MASK=$(ifconfig $DEV |sed 's/^.*Mask://' |grep '^[0-9.]*.$')
 IFS=. read -r i1 i2 i3 i4 <<<$LANIP
 IFS=. read -r m1 m2 m3 m4 <<<$MASK
-NET=$(printf "%d.%d.%d.%d\n" "$((i1 & m1))" "$((i2 & m2))" "$((i3 & m3))" "$((i4 & m4))")
+NET="$(echo "$((i1&m1)).$((i2&m2)).$((i3&m3)).$((i4&m4))")"
 echo "Using device $DEV with IP $LANIP mask $MASK through $GW"
-read -p "Continuing with these settings, Ctrl-C to abort, Enter if OK"
+read -p "Continuing with these settings, Ctrl-C to abort, Enter if OK "
 
-# Required: openvpn easy-rsa
+## Required: openvpn easy-rsa
 apt install openvpn easy-rsa
+## Fix bug in pkitool
+sed -i 's/KEY_ALTNAMES="$KEY_CN"/KEY_ALTNAMES="DNS:$KEY_CN"/g' /usr/share/easy-rsa/pkitool
 
 index="$KEY_DIR/index.txt"
 serial="$KEY_DIR/serial"
@@ -38,12 +40,14 @@ lca="$CONF/${ca##*/}"
 lcrt="$CONF/${crt##*/}"
 lkey="$CONF/${key##*/}"
 
-# Check for non-links in $CONF
+## Check for non-links in $CONF
 [[ -a "$lca"  && ! -L "$ldh" ]] && echo "ABORT: $ldh no link" && exit 3
 [[ -a "$lca"  && ! -L "$lta" ]] && echo "ABORT: $lta no link" && exit 4
 [[ -a "$lca"  && ! -L "$lca" ]] && echo "ABORT: $lca no link" && exit 5
 [[ -a "$lca"  && ! -L "$lcrt" ]] && echo "ABORT: $lcrt no link" && exit 6
 [[ -a "$lca"  && ! -L "$lkey" ]] && echo "ABORT: $lkey no link" && exit 7
+
+[[ $DNS1 = ROUTER ]] && DNS1="$GW" && DNS2="$GW"
 
 config="dev tun
 proto udp
@@ -52,20 +56,14 @@ ca \"$ca\"
 cert \"$crt\"
 key \"$key\"
 dh \"$dh\"
-# server and client tun net
+## server and client tun net
 server 10.8.0.0 255.255.255.0
 ifconfig 10.8.0.1 10.8.0.2
 push \"route 10.8.0.1 255.255.255.255\"
 push \"route 10.8.0.0 255.255.255.0\"
 push \"route $NET $MASK\"
-# Google's DNS harvesters
-;push \"dhcp-option DNS 8.8.8.8\"
-;push \"dhcp-option DNS 8.8.4.4\"
-# OpenDNS's servers
-;push \"dhcp-option DNS 208.67.222.222\"
-;push \"dhcp-option DNS 208.67.220.220\"
-# Router's DNS
-push \"dhcp-option DNS $GW\"
+push \"dhcp-option DNS $DNS1\"
+push \"dhcp-option DNS $DNS2\"
 push \"redirect-gateway def1\"
 client-to-client
 duplicate-cn
@@ -79,7 +77,7 @@ user nobody
 group nogroup
 persist-key
 persist-tun
-#crl-verify \"$CONF/crl.pem\"
+; crl-verify \"$CONF/crl.pem\"
 status \"$CONF/status.log\" 20
 log \"$CONF/openvpn.log\"
 verb 4
@@ -114,5 +112,24 @@ fi
 ! ln -sf "$ca" $CONF/ && echo "ABORT: can't create link for $ca in $CONF" && exit 10
 ! ln -sf "$crt" $CONF/ && echo "ABORT: can't create link for $crt in $CONF" && exit 11
 ! ln -sf "$key" $CONF/ && echo "ABORT: can't create link for $key in $CONF" && exit 12
+
+## Allow for more client certificates
+sed -i 's/unique_subject = yes/unique_subject = no/' "$KEY_DIR/index.txt.attr"
+
+## Set forwarding on the server
+sed -i 's/^#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
+sysctl -p
+
+## Start server
+if [[ -x /bin/systemctl ]]
+then
+	systemctl start openvpn@server
+	systemctl enable openvpn@server
+else
+	## Remove incompatible option
+	sed -i 's/^tls-version-min 1.2/;tls-version-min 1.2/' "$conf"
+	service openvpn start
+	update-rc.d openvpn enable
+fi
 
 exit 0
