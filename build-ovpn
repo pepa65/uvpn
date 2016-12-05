@@ -1,0 +1,68 @@
+#!/bin/bash
+
+## Construct client configuration file, needs NAME for client
+
+[[ $- == *i* ]] && echo "ABORT: run as script, don't source" && return 1
+((EUID)) && echo "ABORT: must have root privileges" && exit 2
+self="$(readlink -e "$0")"
+
+source ${self%/*}/vars
+
+! [[ $NAME ]] && [[ $1 ]] && NAME=$1
+while [[ ! $NAME ]] || [[ $NAME = server || $NAME = ta || $NAME = ca ]]
+do
+	read -p "Give proper client name: " NAME
+done
+
+! [[ $WANDNS ]] && echo "ABORT: WANDNS in vars must be set to a WAN DNS or fixed WAN IP of the server" && exit 3
+ovpn="$KEY_DIR/$NAME.ovpn"
+
+ca="$KEY_DIR/ca.crt"
+ta="$KEY_DIR/ta.key"
+! [[ -f "$ca" && -f "$ta" ]] && echo "ABORT: first run ${self%/*}/build-server" && exit 4
+CA=$(cat "$ca")
+TA=$(cat "$ta")
+
+crt="$KEY_DIR/$NAME.crt"
+key="$KEY_DIR/$NAME.key"
+! [[ -f "$crt" && -f "$key" ]] && "$EASY_RSA/build-key" "$NAME"
+CERT=$(sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' "$crt")
+KEY=$(cat "$key")
+
+echo "client
+dev tun
+proto udp
+remote $WANDNS $WANPORT
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+key-direction 1
+remote-cert-tls server
+tls-version-min 1.2
+verify-x509-name $KEY_NAME name
+cipher AES-256-CBC
+auth SHA256
+comp-lzo
+verb 4
+
+<ca>
+$CA
+</ca>
+
+<cert>
+$CERT
+</cert>
+
+<key>
+$KEY
+</key>
+
+<tls-auth>
+$TA
+<tls-auth>
+" >"$ovpn"
+
+echo "Done building $ovpn"
+
+exit 0

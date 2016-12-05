@@ -1,0 +1,118 @@
+#!/bin/bash
+
+## If run with first argument clean, it starts from scratch
+
+[[ $- == *i* ]] && echo "ABORT: run as script, don't source" && return 1
+((EUID)) && echo "ABORT: must have root privileges" && exit 2
+self="$(readlink -e "$0")"
+
+## Set variables
+source ${self%/*}/vars
+getroute=$(ip route get 8.8.8.8)
+GW=$(echo $getroute |awk '{print $3}')
+DEV=$(echo $getroute |awk '{print $5}')
+LANIP=$(echo $getroute |awk '{print $7}')
+MASK=$(ifconfig $DEV |sed 's/^.*Mask://' |grep '^[0-9.]*.$')
+IFS=. read -r i1 i2 i3 i4 <<<$LANIP
+IFS=. read -r m1 m2 m3 m4 <<<$MASK
+NET=$(printf "%d.%d.%d.%d\n" "$((i1 & m1))" "$((i2 & m2))" "$((i3 & m3))" "$((i4 & m4))")
+echo "Using device $DEV with IP $LANIP mask $MASK through $GW"
+read -p "Continuing with these settings, Ctrl-C to abort, Enter if OK"
+
+# Required: openvpn easy-rsa
+apt install openvpn easy-rsa
+
+index="$KEY_DIR/index.txt"
+serial="$KEY_DIR/serial"
+conf="$CONF/$KEY_NAME.conf"
+
+dh="$KEY_DIR/dh$KEY_SIZE.pem"
+ta="$KEY_DIR/ta.key"
+ca="$KEY_DIR/ca.crt"
+crt="$KEY_DIR/$KEY_NAME.crt"
+key="$KEY_DIR/$KEY_NAME.key"
+
+ldh="$CONF/${dh##*/}"
+lta="$CONF/${ta##*/}"
+lca="$CONF/${ca##*/}"
+lcrt="$CONF/${crt##*/}"
+lkey="$CONF/${key##*/}"
+
+# Check for non-links in $CONF
+[[ -a "$lca"  && ! -L "$ldh" ]] && echo "ABORT: $ldh no link" && exit 3
+[[ -a "$lca"  && ! -L "$lta" ]] && echo "ABORT: $lta no link" && exit 4
+[[ -a "$lca"  && ! -L "$lca" ]] && echo "ABORT: $lca no link" && exit 5
+[[ -a "$lca"  && ! -L "$lcrt" ]] && echo "ABORT: $lcrt no link" && exit 6
+[[ -a "$lca"  && ! -L "$lkey" ]] && echo "ABORT: $lkey no link" && exit 7
+
+config="dev tun
+proto udp
+port $LANPORT
+ca \"$ca\"
+cert \"$crt\"
+key \"$key\"
+dh \"$dh\"
+# server and client tun net
+server 10.8.0.0 255.255.255.0
+ifconfig 10.8.0.1 10.8.0.2
+push \"route 10.8.0.1 255.255.255.255\"
+push \"route 10.8.0.0 255.255.255.0\"
+push \"route $NET $MASK\"
+# Google's DNS harvesters
+;push \"dhcp-option DNS 8.8.8.8\"
+;push \"dhcp-option DNS 8.8.4.4\"
+# OpenDNS's servers
+;push \"dhcp-option DNS 208.67.222.222\"
+;push \"dhcp-option DNS 208.67.220.220\"
+# Router's DNS
+push \"dhcp-option DNS $GW\"
+push \"redirect-gateway def1\"
+client-to-client
+duplicate-cn
+keepalive 10 120
+tls-version-min 1.2
+tls-auth \"$ta\" 0
+cipher AES-256-CBC
+auth SHA256
+comp-lzo
+user nobody
+group nogroup
+persist-key
+persist-tun
+#crl-verify \"$CONF/crl.pem\"
+status \"$CONF/status.log\" 20
+log \"$CONF/openvpn.log\"
+verb 4
+"
+
+if [[ $1 = clean ]]
+then
+	read -p "Removing directory $KEY_DIR, Ctrl-C to abort, Enter if OK "
+	rm -rf "$KEY_DIR"
+	mkdir -p "$KEY_DIR"
+	chmod go-rwx "$KEY_DIR"
+	touch "$index"
+	echo 01 >"$serial"
+	"$OPENSSL" dhparam -out "$dh" "$KEY_SIZE"
+	openvpn --genkey --secret "$ta"
+	"$EASY_RSA/pkitool" --initca
+	"$EASY_RSA/pkitool" --server "$KEY_NAME"
+	echo "$config" >"$conf"
+else
+	mkdir -p "$KEY_DIR"
+	chmod go-rwx "$KEY_DIR"
+	! [[ -f "$index" ]] && touch "$index"
+	! [[ -f "$serial" ]] && echo 01 >"$serial"
+	! [[ -f "$dh" ]] && "$OPENSSL" dhparam -out "$dh" "$KEY_SIZE"
+	! [[ -f "$ta" ]] && openvpn --genkey --secret "$ta"
+	! [[ -f "$ca" ]] && "$EASY_RSA/pkitool" --initca
+	! [[ -f "$crt" && -f "$key" ]] && "$EASY_RSA/pkitool" --server "$KEY_NAME"
+	! [[ -f "$conf" ]] && echo "$config" >"$conf"
+fi
+! ln -sf "$dh" $CONF/ && echo "ABORT: can't create link for $dh in $CONF" && exit 8
+! ln -sf "$ta" $CONF/ && echo "ABORT: can't create link for $ta in $CONF" && exit 9
+! ln -sf "$ca" $CONF/ && echo "ABORT: can't create link for $ca in $CONF" && exit 10
+! ln -sf "$crt" $CONF/ && echo "ABORT: can't create link for $crt in $CONF" && exit 11
+! ln -sf "$key" $CONF/ && echo "ABORT: can't create link for $key in $CONF" && exit 12
+
+exit 0

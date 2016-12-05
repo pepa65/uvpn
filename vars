@@ -1,0 +1,40 @@
+## IP or DNS of server's WAN -- must be set!
+export WANDNS=
+## server's external port
+export WANPORT=1194
+## server's LAN port
+export LANPORT=1194
+
+## Autodiscoverable in build-server, overrideable here:
+GW=
+DEV=
+LANIP=
+
+# modify the certificate
+export KEY_COUNTRY=TH
+export KEY_PROVINCE=10
+export KEY_CITY=Donmueang
+export KEY_ORG=
+export KEY_EMAIL=
+export KEY_NAME=server
+export KEY_OU=UVPN
+export KEY_CN=server
+export KEY_ALTNAMES=
+
+## directories
+export EASY_RSA=/usr/share/easy-rsa
+export CONF=/etc/openvpn
+export KEY_DIR="$CONF/keys"
+
+export OPENSSL=openssl
+export CA_EXPIRE=3650
+export KEY_EXPIRE=3650
+export KEY_SIZE=4096
+
+export PKCS11_MODULE_PATH=dummy
+#export PKCS11_MODULE_PATH=$(shopt -s nullglob; echo /usr/lib/*/echo /usr/lib/*/opensc-pkcs11.so)
+export PKCS11_PIN=dummy
+#export PKCS11_PIN=1234
+
+export KEY_CONFIG="$($EASY_RSA/whichopensslcnf $EASY_RSA)"
+
