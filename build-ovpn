@@ -16,9 +16,15 @@ do
 	read -p "Give proper client name: " NAME
 done
 
-! [[ $WANDNS ]] && echo "ABORT: WANDNS in vars must be set to a WAN DNS or fixed WAN IP of the server" && exit 3
-ovpn="$KEY_DIR/$NAME.ovpn"
+! [[ $WAN ]] && echo "ABORT: WAN in vars must be set to external DNS/IP of the server" && exit 3
+REMOTE=
+for wan in $WAN
+do
+	IFS=':' read url port <<<"$wan"
+  REMOTE+="remote $url $port"$'\n'
+done
 
+ovpn="$KEY_DIR/$NAME.ovpn"
 ca="$KEY_DIR/ca.crt"
 ta="$KEY_DIR/ta.key"
 ! [[ -f "$ca" && -f "$ta" ]] && echo "ABORT: first run ${self%/*}/build-server" && exit 4
@@ -35,8 +41,7 @@ KEY=$(cat "$key")
 echo "client
 dev tun
 proto udp
-remote $WANDNS $WANPORT
-resolv-retry infinite
+${REMOTE}resolv-retry infinite
 nobind
 persist-key
 persist-tun

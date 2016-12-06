@@ -49,7 +49,12 @@ lkey="$CONF/${key##*/}"
 [[ -a "$lca"  && ! -L "$lcrt" ]] && echo "ABORT: $lcrt no link" && exit 6
 [[ -a "$lca"  && ! -L "$lkey" ]] && echo "ABORT: $lkey no link" && exit 7
 
-[[ $DNS1 = ROUTER ]] && DNS1="$GW" && DNS2="$GW"
+DHCP=
+for dhcp in $DNS
+do
+	[[ $dhcp = GW ]] && dhcp="$GW"
+	[[ $dhcp ]] && DHCP+="push \"dhcp-option DNS $dhcp\""$'\n'
+done
 
 config="dev tun
 proto udp
@@ -64,9 +69,7 @@ ifconfig 10.8.0.1 10.8.0.2
 push \"route 10.8.0.1 255.255.255.255\"
 push \"route 10.8.0.0 255.255.255.0\"
 push \"route $NET $MASK\"
-push \"dhcp-option DNS $DNS1\"
-push \"dhcp-option DNS $DNS2\"
-push \"redirect-gateway def1\"
+${DHCP}push \"redirect-gateway def1\"
 client-to-client
 duplicate-cn
 keepalive 10 120

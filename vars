@@ -1,13 +1,12 @@
-## Settings for easy-rsa and build-server
+## Settings for easy-rsa and build-server + build-ovpn
 
-## IP or DNS of server's WAN -- must be set!
-export WANDNS=
-## server's external port
-export WANPORT=1194
+## External IP/DNS of server's WAN, optional with port  -- must be set!
+## Can be multiple entries for failover, space-separated, between quotes
+export WAN=
 ## server's LAN port
 export LANPORT=1194
 
-## Auto-discovered in build-server, overrideable here:
+## auto-discovered in build-server, overrideable here:
 export DEV=
 export LANIP=
 export GW=
@@ -24,13 +23,13 @@ export KEY_OU=UVPN
 export KEY_CN=server
 # export KEY_ALTNAMES=
 
-## choose DNS servers
-## - Google's DNS harvesters: 8.8.8.8  8.8.4.4
-## - OpenDNS with filter options: 208.67.222.222  208.67.220.220
-## - DNS.watch unlogged, DNSSEC enabled: 84.200.69.80  84.200.70.40
+## choose DNS servers (space separated between quotes)
+## - Google's DNS harvesters: 8.8.8.8 8.8.4.4
+## - OpenDNS with filter options: 208.67.222.222 208.67.220.220
+## - DNS.watch unlogged, DNSSEC enabled: 84.200.69.80 84.200.70.40
 ## - The router's DNS: "GW" (will be replaced with the detected gateway)
-export DNS1=GW
-# export DNS2=84.200.70.40
+export DNS=GW
+# export DNS="84.200.69.80 84.200.70.40"
 
 ## directories
 export CONF=/etc/openvpn
