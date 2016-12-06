@@ -1,6 +1,8 @@
 #!/bin/bash
+#set -vx
 
-## Construct client configuration file, needs NAME for client
+## Construct client configuration files
+## $1: name for client (optional, can be set in $NAME or will be asked)
 
 [[ $- == *i* ]] && echo "ABORT: run as script, don't source" && return 1
 ((EUID)) && echo "ABORT: must have root privileges" && exit 2
@@ -28,6 +30,7 @@ key="$KEY_DIR/$NAME.key"
 ! [[ -f "$crt" && -f "$key" ]] && "$EASY_RSA/pkitool" "$NAME"
 CERT=$(sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' "$crt")
 KEY=$(cat "$key")
+[[ -z $CERT || -z $KEY ]] && echo "ABORT: certificate or key not generated" && exit 5
 
 echo "client
 dev tun

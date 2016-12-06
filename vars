@@ -1,39 +1,41 @@
+## Settings for easy-rsa and build-server
+
 ## IP or DNS of server's WAN -- must be set!
-export WANDNS=
+export WANDNS=fhq.dns.teamlampang.org
 ## server's external port
-export WANPORT=1194
+export WANPORT=11193
 ## server's LAN port
 export LANPORT=1194
 
 ## Autodiscoverable in build-server, overrideable here:
-DEV=
-LANIP=
-GW=
-MASK=
+export DEV=
+export LANIP=
+export GW=
+export MASK=
 
 ## modify the certificate
 export KEY_COUNTRY=TH
 export KEY_PROVINCE=10
 export KEY_CITY=Donmueang
-export KEY_ORG=
-export KEY_EMAIL=
+export KEY_ORG="OMF Thailand"
+export KEY_EMAIL=omfth@teamlampang.org
 export KEY_NAME=server
 export KEY_OU=UVPN
 export KEY_CN=server
-; export KEY_ALTNAMES=
+export KEY_ALTNAMES=brain3
 
 ## choose DNS servers
 ##  Google's DNS harvesters: 8.8.8.8  8.8.4.4
 ##  OpenDNS with filter options: 208.67.222.222  208.67.220.220
 ##  DNS.watch unlogged, DNSSEC enabled: 84.200.69.80  84.200.70.40
 ##  The router's DNS: "GW" (will be replaced with the detected gateway)
-export DNS1=84.200.69.80
-export DNS2=84.200.70.40
+export DNS1=GW
+#export DNS2=84.200.70.40
 
 ## directories
-export EASY_RSA=/usr/share/easy-rsa
 export CONF=/etc/openvpn
 export KEY_DIR="$CONF/keys"
+export EASY_RSA=/usr/share/easy-rsa
 
 export OPENSSL=openssl
 export CA_EXPIRE=3650
@@ -41,9 +43,8 @@ export KEY_EXPIRE=3650
 export KEY_SIZE=4096
 
 export PKCS11_MODULE_PATH=dummy
-# export PKCS11_MODULE_PATH=$(shopt -s nullglob; echo /usr/lib/*/echo /usr/lib/*/opensc-pkcs11.so)
+# export PKCS11_MODULE_PATH=$(shopt -s nullglob; find /usr/lib/*/opensc-pkcs11.so)
 export PKCS11_PIN=dummy
 # export PKCS11_PIN=1234
 
-export KEY_CONFIG="$($EASY_RSA/whichopensslcnf $EASY_RSA)"
-
+export KEY_CONFIG="$($EASY_RSA/whichopensslcnf "$EASY_RSA")"

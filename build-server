@@ -1,10 +1,17 @@
 #!/bin/bash
+#set -vx
 
-## If run with first argument clean, it starts from scratch
+## Install and setup OpenVPN server
+## $1: clean (optional: all old keys and certificates will be wiped)
 
 [[ $- == *i* ]] && echo "ABORT: run as script, don't source" && return 1
 ((EUID)) && echo "ABORT: must have root privileges" && exit 2
 self="$(readlink -e "$0")"
+
+## Required packages
+apt install openvpn easy-rsa
+## Fix bug in pkitool
+sed -i 's/KEY_ALTNAMES="$KEY_CN"/KEY_ALTNAMES="DNS:$KEY_CN"/g' /usr/share/easy-rsa/pkitool
 
 ## Set variables
 source ${self%/*}/vars
@@ -18,11 +25,6 @@ IFS=. read -r m1 m2 m3 m4 <<<$MASK
 NET="$(echo "$((i1&m1)).$((i2&m2)).$((i3&m3)).$((i4&m4))")"
 echo "Using device $DEV with IP $LANIP mask $MASK through $GW"
 read -p "Continuing with these settings, Ctrl-C to abort, Enter if OK "
-
-## Required: openvpn easy-rsa
-apt install openvpn easy-rsa
-## Fix bug in pkitool
-sed -i 's/KEY_ALTNAMES="$KEY_CN"/KEY_ALTNAMES="DNS:$KEY_CN"/g' /usr/share/easy-rsa/pkitool
 
 index="$KEY_DIR/index.txt"
 serial="$KEY_DIR/serial"
