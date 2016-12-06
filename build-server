@@ -16,13 +16,13 @@ sed -i 's/KEY_ALTNAMES="$KEY_CN"/KEY_ALTNAMES="DNS:$KEY_CN"/g' /usr/share/easy-r
 ## Set variables
 source ${self%/*}/vars
 getroute=$(ip route get 8.8.8.8)
-[[ $DEV ]] || DEV=$(echo $getroute |awk '{print $5}')
-[[ $GW ]] || GW=$(echo $getroute |awk '{print $3}')
-[[ $lANIP ]] || LANIP=$(echo $getroute |awk '{print $7}')
+[[ $DEV ]] || read _ _ _ _ DEV _ <<<"$getroute"
+[[ $GW ]] || read _ _ GW _ <<<"$getroute"
+[[ $LANIP ]] || read _ _ _ _ _ _ LANIP _ <<<"$getroute"
 [[ $MASK ]] || MASK=$(ifconfig $DEV |sed 's/^.*Mask://' |grep '^[0-9.]*.$')
 IFS=. read -r i1 i2 i3 i4 <<<$LANIP
 IFS=. read -r m1 m2 m3 m4 <<<$MASK
-NET="$(echo "$((i1&m1)).$((i2&m2)).$((i3&m3)).$((i4&m4))")"
+net="$(echo "$((i1&m1)).$((i2&m2)).$((i3&m3)).$((i4&m4))")"
 echo "Using device $DEV with IP $LANIP mask $MASK through $GW"
 read -p "Continuing with these settings, Ctrl-C to abort, Enter if OK "
 
@@ -52,7 +52,7 @@ lkey="$CONF/${key##*/}"
 DHCP=
 for dhcp in $DNS
 do
-	[[ $dhcp = GW ]] && dhcp="$GW"
+	[[ $dhcp = LOCAL ]] && dhcp="$GW"
 	[[ $dhcp ]] && DHCP+="push \"dhcp-option DNS $dhcp\""$'\n'
 done
 
@@ -68,7 +68,7 @@ server 10.8.0.0 255.255.255.0
 ifconfig 10.8.0.1 10.8.0.2
 push \"route 10.8.0.1 255.255.255.255\"
 push \"route 10.8.0.0 255.255.255.0\"
-push \"route $NET $MASK\"
+push \"route $net $MASK\"
 ${DHCP}push \"redirect-gateway def1\"
 client-to-client
 duplicate-cn

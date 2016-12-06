@@ -2,7 +2,7 @@
 #set -vx
 
 ## Construct client configuration files
-## $1: name for client (optional, can be set in $NAME or will be asked)
+## $1: name for client (optional, can be set in $name or will be asked)
 
 [[ $- == *i* ]] && echo "ABORT: run as script, don't source" && return 1
 ((EUID)) && echo "ABORT: must have root privileges" && exit 2
@@ -10,10 +10,10 @@ self="$(readlink -e "$0")"
 
 source ${self%/*}/vars
 
-! [[ $NAME ]] && [[ $1 ]] && NAME=$1
-while [[ ! $NAME ]] || [[ $NAME = server || $NAME = ta || $NAME = ca ]]
+! [[ $name ]] && [[ $1 ]] && name=$1
+while [[ ! $name ]] || [[ $name = server || $name = ta || $name = ca ]]
 do
-	read -p "Give proper client name: " NAME
+	read -p "Give proper client name: " name
 done
 
 ! [[ $WAN ]] && echo "ABORT: WAN in vars must be set to external DNS/IP of the server" && exit 3
@@ -24,19 +24,19 @@ do
   REMOTE+="remote $url $port"$'\n'
 done
 
-ovpn="$KEY_DIR/$NAME.ovpn"
-ca="$KEY_DIR/ca.crt"
-ta="$KEY_DIR/ta.key"
-! [[ -f "$ca" && -f "$ta" ]] && echo "ABORT: first run ${self%/*}/build-server" && exit 4
-CA=$(cat "$ca")
-TA=$(cat "$ta" |grep -v '^#')
+ovpn="$KEY_DIR/$name.ovpn"
+cafile="$KEY_DIR/ca.crt"
+tafile="$KEY_DIR/ta.key"
+! [[ -f "$cafile" && -f "$tafile" ]] && echo "ABORT: first run ${self%/*}/build-server" && exit 4
+ca=$(cat "$cafile")
+ta=$(cat "$tafile" |grep -v '^#')
 
-crt="$KEY_DIR/$NAME.crt"
-key="$KEY_DIR/$NAME.key"
-! [[ -f "$crt" && -f "$key" ]] && "$EASY_RSA/pkitool" "$NAME"
-CERT=$(sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' "$crt")
-KEY=$(cat "$key")
-[[ -z $CERT || -z $KEY ]] && echo "ABORT: certificate or key not generated" && exit 5
+crtfile="$KEY_DIR/$name.crt"
+keyfile="$KEY_DIR/$name.key"
+! [[ -f "$crtfile" && -f "$keyfile" ]] && "$EASY_RSA/pkitool" "$name"
+crt=$(sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' "$crtfile")
+key=$(cat "$keyfile")
+[[ -z $crt || -z $key ]] && echo "ABORT: certificate or key not generated" && exit 5
 
 echo "client
 dev tun
@@ -54,16 +54,16 @@ auth SHA256
 comp-lzo
 verb 4
 <ca>
-$CA
+$ca
 </ca>
 <cert>
-$CERT
+$crt
 </cert>
 <key>
-$KEY
+$key
 </key>
 <tls-auth>
-$TA
+$ta
 </tls-auth>
 " >"$ovpn"
 

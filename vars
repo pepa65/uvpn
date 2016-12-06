@@ -1,49 +1,46 @@
 ## Settings for easy-rsa and build-server + build-ovpn
+## The exported variables are (also) used in easy-rsa
 
-## External IP/DNS of server's WAN, optional with port  -- must be set!
+## External IP/DNS of server's WAN, optional with port, like: "URL:PORT"
 ## Can be multiple entries for failover, space-separated between quotes
-export WAN=""
+WAN=""
 ## server's LAN port
-export LANPORT=1194
+LANPORT="1194"
 
 ## auto-discovered in build-server, overrideable here:
-export DEV=
-export LANIP=
-export GW=
-export MASK=
+DEV=""
+LANIP=""
+GW=""
+MASK=""
 
-## modify the certificate
-export KEY_COUNTRY=TH
-export KEY_PROVINCE=10
-export KEY_CITY=Donmueang
-export KEY_ORG=
-export KEY_EMAIL=
-export KEY_NAME=server
-export KEY_OU=UVPN
-export KEY_CN=server
-# export KEY_ALTNAMES=
+## adapt the certificate
+export KEY_COUNTRY="TH"
+export KEY_PROVINCE="10"
+export KEY_CITY=""
+export KEY_ORG=""
+export KEY_EMAIL=""
+export KEY_NAME="server"
+export KEY_OU="uVPN"
+export KEY_CN="server"
+# export KEY_ALTNAMES=""
 
 ## choose DNS servers (space-separated between quotes)
 ## - Google's DNS harvesters: 8.8.8.8 8.8.4.4
 ## - OpenDNS with filter options: 208.67.222.222 208.67.220.220
 ## - DNS.watch unlogged, DNSSEC enabled: 84.200.69.80 84.200.70.40
-## - The router's DNS: "GW" (will be replaced with the detected gateway)
-export DNS=GW
-# export DNS="84.200.69.80 84.200.70.40"
+## - The router's DNS: "LOCAL" (will be replaced with the detected gateway)
+DNS="LOCAL"
+# DNS="84.200.69.80 84.200.70.40"
 
-## directories
-export CONF=/etc/openvpn
+CONF="/etc/openvpn"
 export KEY_DIR="$CONF/keys"
-export EASY_RSA=/usr/share/easy-rsa
-
-export OPENSSL=openssl
-export CA_EXPIRE=3650
-export KEY_EXPIRE=3650
-export KEY_SIZE=4096
-
-export PKCS11_MODULE_PATH=dummy
-# export PKCS11_MODULE_PATH=$(shopt -s nullglob; find /usr/lib/*/opensc-pkcs11.so)
-export PKCS11_PIN=dummy
-# export PKCS11_PIN=1234
-
+export EASY_RSA="$(whereis easy-rsa |grep -o '[^ ]*$')"
+export OPENSSL="openssl"
+export CA_EXPIRE="3650"
+export KEY_EXPIRE="3650"
+export KEY_SIZE="4096"
+export PKCS11_MODULE_PATH="dummy"
+# export PKCS11_MODULE_PATH="$(shopt -s nullglob; find /usr/lib/*/opensc-pkcs11.so)"
+export PKCS11_PIN="dummy"
+# export PKCS11_PIN="1234"
 export KEY_CONFIG="$($EASY_RSA/whichopensslcnf "$EASY_RSA")"
