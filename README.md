@@ -1,5 +1,5 @@
 # uVPN
-*a quick way to setup secure OpenVPN with easy-rsa on Ubuntu*
+*a quick way to setup secure OpenVPN with easy-rsa2 on Debian, Ubuntu and Linux Mint*
 
 Clone or download, configure the options in `vars` then run `build-server` 
 as root. The packages openvpn and easy-rsa and dependencies will be downloaded 
