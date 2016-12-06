@@ -23,7 +23,7 @@ ca="$KEY_DIR/ca.crt"
 ta="$KEY_DIR/ta.key"
 ! [[ -f "$ca" && -f "$ta" ]] && echo "ABORT: first run ${self%/*}/build-server" && exit 4
 CA=$(cat "$ca")
-TA=$(cat "$ta")
+TA=$(cat "$ta" |grep -v '^#')
 
 crt="$KEY_DIR/$NAME.crt"
 key="$KEY_DIR/$NAME.key"
@@ -48,19 +48,15 @@ cipher AES-256-CBC
 auth SHA256
 comp-lzo
 verb 4
-
 <ca>
 $CA
 </ca>
-
 <cert>
 $CERT
 </cert>
-
 <key>
 $KEY
 </key>
-
 <tls-auth>
 $TA
 </tls-auth>
