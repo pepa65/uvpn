@@ -88,6 +88,9 @@ log \"$CONF/openvpn.log\"
 verb 4
 "
 
+## Stop server in case it's running
+[[ -x /bin/systemctl ]] && systemctl stop openvpn@server || service openvpn stop
+
 if [[ $1 = clean ]]
 then
 	read -p "Removing directory $KEY_DIR, Ctrl-C to abort, Enter if OK "
@@ -132,7 +135,7 @@ then
 	systemctl enable openvpn@server
 else
 	## Remove incompatible option
-	sed -i 's/^tls-version-min 1.2/;tls-version-min 1.2/' "$conf"
+	sed -i 's/^tls-version-min 1.2/; tls-version-min 1.2/' "$conf"
 	service openvpn start
 	update-rc.d openvpn enable
 fi
