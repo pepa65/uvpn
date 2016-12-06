@@ -1,8 +1,8 @@
 ## Settings for easy-rsa and build-server + build-ovpn
 
 ## External IP/DNS of server's WAN, optional with port  -- must be set!
-## Can be multiple entries for failover, space-separated, between quotes
-export WAN=
+## Can be multiple entries for failover, space-separated between quotes
+export WAN=""
 ## server's LAN port
 export LANPORT=1194
 
@@ -23,7 +23,7 @@ export KEY_OU=UVPN
 export KEY_CN=server
 # export KEY_ALTNAMES=
 
-## choose DNS servers (space separated between quotes)
+## choose DNS servers (space-separated between quotes)
 ## - Google's DNS harvesters: 8.8.8.8 8.8.4.4
 ## - OpenDNS with filter options: 208.67.222.222 208.67.220.220
 ## - DNS.watch unlogged, DNSSEC enabled: 84.200.69.80 84.200.70.40
