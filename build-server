@@ -1,7 +1,7 @@
 #!/bin/bash
 #set -vx
 
-## Install and setup OpenVPN server
+## Install and setup OpenVPN server
 ## $1: clean (optional: all old keys and certificates will be wiped)
 
 [[ $- == *i* ]] && echo "ABORT: run as script, don't source" && return 1
@@ -42,7 +42,7 @@ lca="$CONF/${ca##*/}"
 lcrt="$CONF/${crt##*/}"
 lkey="$CONF/${key##*/}"
 
-## Check for non-links in $CONF
+## Check for non-links in $CONF
 [[ -a "$lca"  && ! -L "$ldh" ]] && echo "ABORT: $ldh no link" && exit 3
 [[ -a "$lca"  && ! -L "$lta" ]] && echo "ABORT: $lta no link" && exit 4
 [[ -a "$lca"  && ! -L "$lca" ]] && echo "ABORT: $lca no link" && exit 5
@@ -88,7 +88,7 @@ log \"$CONF/openvpn.log\"
 verb 4
 "
 
-## Stop server in case it's running
+## Stop server in case it's running
 [[ -x /bin/systemctl ]] && systemctl stop openvpn@server || service openvpn stop
 
 if [[ $1 = clean ]]

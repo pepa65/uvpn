@@ -24,6 +24,16 @@ do
   REMOTE+="remote $url $port"$'\n'
 done
 
+[[ $DHCP_RANGE ]] && {
+	getroute=$(ip route get 8.8.8.8)
+	[[ $GW ]] || read _ _ GW _ <<<"$getroute"
+	[[ $MASK ]] || {
+		[[ $DEV ]] || read _ _ _ _ DEV _ <<<"$getroute"
+		MASK=$(ifconfig $DEV |sed 's/^.*Mask://' |grep '^[0-9.]*.$')
+	}
+	start=${DHCP_RANGE%-*} end=${DHCP_RANGE#*-}
+	bridge="server-bridge $GW $MASK ${GW%.*}.$start ${GW%.*}.$end"
+}
 ovpn="$KEY_DIR/$name.ovpn"
 cafile="$KEY_DIR/ca.crt"
 tafile="$KEY_DIR/ta.key"
@@ -45,6 +55,7 @@ ${REMOTE}resolv-retry infinite
 nobind
 persist-key
 persist-tun
+$bridge
 remote-cert-tls server
 ; tls-version-min 1.2
 key-direction 1

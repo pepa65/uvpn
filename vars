@@ -6,6 +6,10 @@
 WAN=""
 ## server's LAN port
 LANPORT="1194"
+## Unused DHCP range on the server LAN for VPN clients to access SMB shares
+## If set adds 'server-bridge' directive to ovpn; syntax: "START-END"
+## This gets tacked onto the GW's first 3 octets, for example 192.168.1.20-30
+DHCP_RANGE=""
 
 ## auto-discovered in build-server, overrideable here:
 DEV=""
