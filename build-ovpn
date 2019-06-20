@@ -1,8 +1,8 @@
 #!/bin/bash
 #set -vx
-
-## Construct client configuration files
-## $1: name for client (optional, can be set in $name or will be asked)
+## build-ovpn - Make OpenVPN client configuration file
+## Usage: build-ovpn [CLIENT]
+##   CLIENT: clientname (will be asked if not given or set in $UVPN_NAME)
 
 [[ $- == *i* ]] && echo "ABORT: run as script, don't source" && return 1
 ((EUID)) && echo "ABORT: must have root privileges" && exit 2
@@ -10,13 +10,17 @@ self="$(readlink -e "$0")"
 
 source ${self%/*}/vars
 
-! [[ $name ]] && [[ $1 ]] && name=$1
+name=$UVPN_NAME
+: ${name:=$1}
 while [[ ! $name ]] || [[ $name = server || $name = ta || $name = ca ]]
 do
-	read -p "Give proper client name: " name
+	[[ $name ]] && echo "Client name '$name' is unacceptable"
+	read -rp "Give proper client name: " name
 done
 
-! [[ $WAN ]] && echo "ABORT: WAN in vars must be set to external DNS/IP of the server" && exit 3
+[[ -z $WAN ]] &&
+	echo "ABORT: WAN in vars must be set to external DN/IP(s) of the server" &&
+	exit 3
 REMOTE=
 for wan in $WAN
 do
@@ -24,16 +28,19 @@ do
   REMOTE+="remote $url $port"$'\n'
 done
 
-[[ $DHCP_RANGE ]] && {
-	getroute=$(ip route get 8.8.8.8)
-	[[ $GW ]] || read _ _ GW _ <<<"$getroute"
-	[[ $MASK ]] || {
-		[[ $DEV ]] || read _ _ _ _ DEV _ <<<"$getroute"
+if [[ $DHCP_RANGE ]]
+then
+	getroute=($(ip route get 8.8.8.8))
+	: ${GW:=${getroute[2]}}
+	if [[ -z $MASK ]]
+	then
+		: ${DEV:=${getroute[4]}}
 		MASK=$(ifconfig $DEV |sed 's/^.*Mask://' |grep '^[0-9.]*.$')
-	}
+	fi
 	start=${DHCP_RANGE%-*} end=${DHCP_RANGE#*-}
 	bridge="server-bridge $GW $MASK ${GW%.*}.$start ${GW%.*}.$end"
-}
+fi
+
 ovpn="$KEY_DIR/$name.ovpn"
 cafile="$KEY_DIR/ca.crt"
 tafile="$KEY_DIR/ta.key"
@@ -48,36 +55,37 @@ crt=$(sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' "$crtfile")
 key=$(cat "$keyfile")
 [[ -z $crt || -z $key ]] && echo "ABORT: certificate or key not generated" && exit 5
 
-echo "client
-dev tun
-proto udp
-${REMOTE}resolv-retry infinite
-nobind
-persist-key
-persist-tun
-$bridge
-remote-cert-tls server
-; tls-version-min 1.2
-key-direction 1
-verify-x509-name $KEY_NAME name
-cipher AES-256-CBC
-auth SHA256
-comp-lzo
-verb 4
-<ca>
-$ca
-</ca>
-<cert>
-$crt
-</cert>
-<key>
-$key
-</key>
-<tls-auth>
-$ta
-</tls-auth>
-" >"$ovpn"
+cat <<-EOF >"$ovpn"
+	client
+	dev tun
+	proto udp
+	${REMOTE}resolv-retry infinite
+	nobind
+	persist-key
+	persist-tun
+	$bridge
+	remote-cert-tls server
+	; tls-version-min 1.2
+	key-direction 1
+	verify-x509-name $KEY_NAME name
+	cipher AES-256-CBC
+	auth SHA256
+	comp-lzo
+	verb 4
+	<ca>
+	$ca
+	</ca>
+	<cert>
+	$crt
+	</cert>
+	<key>
+	$key
+	</key>
+	<tls-auth>
+	$ta
+	</tls-auth>
+EOF
 
-echo "Done building $ovpn"
+echo "Client configuration file '$ovpn' done"
 
 exit 0

@@ -1,34 +1,37 @@
-## Settings for easy-rsa and build-server + build-ovpn
-## The exported variables are (also) used in easy-rsa
+#### Variables for easy-rsa (version 2), build-server and build-ovpn
 
-## External IP/DNS of server's WAN, optional with port, like: "URL:PORT"
-## Can be multiple entries for failover, space-separated between quotes
+### Server's External DN/IP(s), optional with port, like: WANURL:WANPORT
+## Multiple entries for failover allowed, space-separated between the quotes
 WAN=""
-## server's LAN port
-LANPORT="1194"
-## Unused DHCP range on the server LAN for VPN clients to access SMB shares
-## If set adds 'server-bridge' directive to ovpn; syntax: "START-END"
-## This gets tacked onto the GW's first 3 octets, for example 192.168.1.20-30
+
+### server's LAN port (if empty defaults to 1194)
+LANPORT=""
+
+### Unused DHCP range on the server's LAN for VPN clients to access SMB shares
+## Adds 'server-bridge' directive to ovpn if set
+## Syntax: "START-END" which is the range of the final octet of the LAN subnet
+##   (the GW's first 3 octets, plus the range specified)
 DHCP_RANGE=""
 
-## auto-discovered in build-server, overrideable here:
+## Auto-discovered in build-server, but overrideable here:
 DEV=""
 LANIP=""
 GW=""
 MASK=""
 
-## adapt the certificate
-export KEY_COUNTRY="TH"
-export KEY_PROVINCE="10"
+### Exported variables are needed for easy-rsa
+## Adapt the certificate:
+export KEY_COUNTRY="TH"  ## 2-capital country-code
+export KEY_PROVINCE="10"  ## 10:Bangkok
 export KEY_CITY=""
 export KEY_ORG=""
 export KEY_EMAIL=""
 export KEY_NAME="server"
 export KEY_OU="uVPN"
 export KEY_CN="server"
-# export KEY_ALTNAMES=""
+# export KEY_ALTNAMES=""  ## Should start with 'DNS:'
 
-## choose DNS servers (space-separated between quotes)
+### Choose DNS servers (space-separated between quotes)
 ## - Google's DNS harvesters: 8.8.8.8 8.8.4.4
 ## - OpenDNS with filter options: 208.67.222.222 208.67.220.220
 ## - DNS.watch unlogged, DNSSEC enabled: 84.200.69.80 84.200.70.40
