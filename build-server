@@ -1,8 +1,8 @@
 #!/bin/bash
 #set -vx
 ## build-server - Install and setup OpenVPN server
-## Usage: build-server [clean]
-##   clean: all old keys and certificates will be wiped
+## Usage: build-server [-i|--init]
+##   -i/--init: (re)initialize configuration (wipe all old keys/certificates)
 
 [[ $- == *i* ]] && echo "ABORT: run as script, don't source" && return 1
 ((EUID)) && echo "ABORT: must have root privileges" && exit 2
@@ -99,9 +99,9 @@ read -rd '' config <<-EOF
 	verb 4
 EOF
 
-if [[ $1 = clean ]]
+if [[ $1 = -i || $1 = --init ]]
 then
-	read -p "Removing directory $KEY_DIR, Ctrl-C to abort, Enter if OK "
+	read -p "Wiping '$KEY_DIR' and initializing, Ctrl-C to abort, Enter if OK "
 	StopOpenVPN
 	rm -rf "$KEY_DIR"
 	mkdir -p "$KEY_DIR"
