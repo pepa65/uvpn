@@ -3,6 +3,8 @@
 ## build-server - Install and setup OpenVPN server
 ## Usage: build-server [-i|--init]
 ##   -i/--init: (re)initialize configuration (wipe all old keys/certificates)
+## Variables exported in vars used: EASY_RSA OPENSSL DEV GW MASK LANPORT DNS
+##   KEY_ALTNAMES KEY_CN KEY_NAME KEY_SIZE KEY_DIR
 
 [[ $- == *i* ]] && echo "ABORT: run as script, don't source" && return 1
 ((EUID)) && echo "ABORT: must have root privileges" && exit 2
@@ -26,12 +28,12 @@ source "$dir/vars"
 getroute=($(ip route get 8.8.8.8))
 [[ $DEV ]] || DEV=${getroute[4]}
 [[ $GW ]] || GW=${getroute[2]}
-[[ $LANIP ]] || LANIP==${getroute[6]}
 [[ $MASK ]] || MASK=$(ifconfig $DEV |sed 's/^.*Mask://' |grep '^[0-9.]*.$')
-IFS=. read -r i1 i2 i3 i4 <<<"$LANIP"
+lanip==${getroute[6]}
+IFS=. read -r i1 i2 i3 i4 <<<"$lanip"
 IFS=. read -r m1 m2 m3 m4 <<<"$MASK"
 net=$((i1&m1)).$((i2&m2)).$((i3&m3)).$((i4&m4))
-echo "Using device $DEV with IP $LANIP mask $MASK through $GW"
+echo "Using device $DEV with IP $lanip mask $MASK through $GW"
 
 index="$KEY_DIR/index.txt"
 serial="$KEY_DIR/serial"
@@ -59,11 +61,10 @@ then
 	[[ ! -L "$lkey" ]] && echo "ABORT: $lkey no link" && exit 7
 fi
 
+[[ -z $DNS ]] && DNS="$GW"
 DHCP=
-for dhcp in $DNS
-do
-	[[ $dhcp = LOCAL ]] && dhcp="$GW"
-	[[ $dhcp ]] && DHCP+="push \"dhcp-option DNS $dhcp\""$'\n'
+for dns in $DNS
+do DHCP+="push \"dhcp-option DNS $dns\""$'\n'
 done
 
 read -rd '' config <<-EOF

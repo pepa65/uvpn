@@ -3,13 +3,17 @@
 ## build-ovpn - Make OpenVPN client configuration file
 ## Usage: build-ovpn [CLIENT]
 ##   CLIENT: clientname (will be asked if not given or set in $UVPN_NAME)
+## Variables imported from vars: WAN KEY_DIR EASY_RSA [DHCP_RANGE DEV GW MASK]
 
 [[ $- == *i* ]] && echo "ABORT: run as script, don't source" && return 1
 ((EUID)) && echo "ABORT: must have root privileges" && exit 2
-self="$(readlink -e "$0")"
+dir="$(readlink -e "$0")" dir=${dir%/*}
 
-source ${self%/*}/vars
+source "$dir/vars"
 
+[[ -z $WAN ]] &&
+	echo "ABORT: WAN in vars must be set to external DN/IP(s) of the server" &&
+	exit 3
 name=$UVPN_NAME
 : ${name:=$1}
 while [[ ! $name ]] || [[ $name = server || $name = ta || $name = ca ]]
@@ -18,14 +22,11 @@ do
 	read -rp "Give proper client name: " name
 done
 
-[[ -z $WAN ]] &&
-	echo "ABORT: WAN in vars must be set to external DN/IP(s) of the server" &&
-	exit 3
-REMOTE=
+remote=
 for wan in $WAN
 do
 	IFS=':' read url port <<<"$wan"
-  REMOTE+="remote $url $port"$'\n'
+  remote+="remote $url $port"$'\n'
 done
 
 if [[ $DHCP_RANGE ]]
@@ -44,7 +45,7 @@ fi
 ovpn="$KEY_DIR/$name.ovpn"
 cafile="$KEY_DIR/ca.crt"
 tafile="$KEY_DIR/ta.key"
-! [[ -f "$cafile" && -f "$tafile" ]] && echo "ABORT: first run ${self%/*}/build-server" && exit 4
+! [[ -f "$cafile" && -f "$tafile" ]] && echo "ABORT: Run $dir/build-server first" && exit 4
 ca=$(cat "$cafile")
 ta=$(cat "$tafile" |grep -v '^#')
 
@@ -59,7 +60,7 @@ cat <<-EOF >"$ovpn"
 	client
 	dev tun
 	proto udp
-	${REMOTE}resolv-retry infinite
+	${remote}resolv-retry infinite
 	nobind
 	persist-key
 	persist-tun

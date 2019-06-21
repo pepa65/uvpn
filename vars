@@ -4,28 +4,20 @@
 ## Multiple entries for failover allowed, space-separated between the quotes
 WAN=""
 
-### server's LAN port (if empty defaults to 1194)
-LANPORT=""
-
 ### Unused DHCP range on the server's LAN for VPN clients to access SMB shares
 ## Adds 'server-bridge' directive to ovpn if set
 ## Syntax: "START-END" which is the range of the final octet of the LAN subnet
 ##   (the GW's first 3 octets, plus the range specified)
 DHCP_RANGE=""
 
-## Auto-discovered in build-server, but overrideable here:
-DEV=""
-LANIP=""
-GW=""
-MASK=""
-
-### Exported variables are needed for easy-rsa
-## Adapt the certificate:
+### Server certificate
+## Fill in the certificate fields with appropriate values
 export KEY_COUNTRY="TH"  ## 2-capital country-code
 export KEY_PROVINCE="10"  ## 10:Bangkok
 export KEY_CITY=""
 export KEY_ORG=""
 export KEY_EMAIL=""
+## No need to change these
 export KEY_NAME="server"
 export KEY_OU="uVPN"
 export KEY_CN="server"
@@ -35,11 +27,22 @@ export KEY_CN="server"
 ## - Google's DNS harvesters: 8.8.8.8 8.8.4.4
 ## - OpenDNS with filter options: 208.67.222.222 208.67.220.220
 ## - DNS.watch unlogged, DNSSEC enabled: 84.200.69.80 84.200.70.40
-## - The router's DNS: "LOCAL" (will be replaced with the detected gateway)
-DNS="LOCAL"
+## If empty defaults to the router's DNS (the detected gateway)
 # DNS="84.200.69.80 84.200.70.40"
+DNS=""
 
-CONF="/etc/openvpn"
+### server's LAN port (defaults to 1194 if empty)
+LANPORT=""
+
+### Miscellaneous LAN/server variables
+## Auto-discovered in build-server, but overrideable here
+DEV=""  ## Server's ethernet device name
+GW=""  ## LAN gateway
+MASK=""  ## LAN netmask
+
+### Variables exported for easy-rsa
+## No need to modify
+CONF="/etc/openvpn"  ## Configuration directory
 export KEY_DIR="$CONF/keys"
 export EASY_RSA="$(whereis easy-rsa |grep -o '[^ ]*$')"
 export OPENSSL="openssl"
