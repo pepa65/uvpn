@@ -3,7 +3,7 @@
 ## build-ovpn - Make OpenVPN client configuration file
 ## Usage: build-ovpn [CLIENT]
 ##   CLIENT: clientname (will be asked if not given or set in $UVPN_NAME)
-## Variables imported from vars: WAN KEY_DIR EASY_RSA [DHCP_RANGE DEV GW MASK]
+## Variables imported from vars: WAN KEY_DIR EASY_RSA
 
 [[ $- == *i* ]] && echo "ABORT: run as script, don't source" && return 1
 ((EUID)) && echo "ABORT: must have root privileges" && exit 2
@@ -28,19 +28,6 @@ do
 	IFS=':' read url port <<<"$wan"
   remote+="remote $url $port"$'\n'
 done
-
-if [[ $DHCP_RANGE ]]
-then
-	getroute=($(ip route get 8.8.8.8))
-	: ${GW:=${getroute[2]}}
-	if [[ -z $MASK ]]
-	then
-		: ${DEV:=${getroute[4]}}
-		MASK=$(ifconfig $DEV |sed 's/^.*Mask://' |grep '^[0-9.]*.$')
-	fi
-	start=${DHCP_RANGE%-*} end=${DHCP_RANGE#*-}
-	bridge="server-bridge $GW $MASK ${GW%.*}.$start ${GW%.*}.$end"
-fi
 
 ovpn="$KEY_DIR/$name.ovpn"
 cafile="$KEY_DIR/ca.crt"

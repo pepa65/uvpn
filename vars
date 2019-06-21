@@ -4,12 +4,6 @@
 ## Multiple entries for failover allowed, space-separated between the quotes
 WAN=""
 
-### Unused DHCP range on the server's LAN for VPN clients to access SMB shares
-## Adds 'server-bridge' directive to ovpn if set
-## Syntax: "START-END" which is the range of the final octet of the LAN subnet
-##   (the GW's first 3 octets, plus the range specified)
-DHCP_RANGE=""
-
 ### Server certificate
 ## Fill in the certificate fields with appropriate values
 export KEY_COUNTRY="TH"  ## 2-capital country-code
